@@ -50,6 +50,17 @@ export const SellerDashboardPage = () => {
     }
   };
 
+  const handleReactivate = async (listing) => {
+    setError(null);
+    try {
+      await listingApi.reactivate(listing.id);
+      setSuccess(`Listing "${listing.title}" successfully reactivated and live on marketplace!`);
+      await fetchMyListings();
+    } catch (err) {
+      setError(err.message || 'Failed to reactivate listing');
+    }
+  };
+
   return (
     <div className="seller-dashboard-page">
       <header className="page-header">
@@ -128,13 +139,21 @@ export const SellerDashboardPage = () => {
                         >
                           Edit
                         </Link>
-                        {listing.status === 'ACTIVE' && (
+                        {listing.status === 'ACTIVE' ? (
                           <button
                             type="button"
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => setDeactivatingListing(listing)}
                           >
                             Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleReactivate(listing)}
+                          >
+                            ✓ Reactivate
                           </button>
                         )}
                       </div>

@@ -43,9 +43,10 @@ export const updateListingSchema = z.object({
         })
         .optional(),
       category: z.string().trim().min(2).max(100).optional(),
+      status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
-      message: 'At least one field (title, description, price, category) must be provided for update',
+      message: 'At least one field must be provided for update',
     }),
 });
 

@@ -29,4 +29,10 @@ export const listingApi = {
     apiClient(`/listings/${id}`, {
       method: 'DELETE',
     }),
+
+  reactivate: (id) =>
+    apiClient(`/listings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'ACTIVE' }),
+    }),
 };
