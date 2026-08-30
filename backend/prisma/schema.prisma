@@ -1,0 +1,87 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum ListingStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relationships
+  listings     Listing[] @relation("SellerListings")
+  buyerOrders  Order[]   @relation("BuyerOrders")
+  sellerOrders Order[]   @relation("SellerOrders")
+
+  @@index([role])
+  @@map("users")
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  sellerId    String
+  title       String        @db.VarChar(255)
+  description String        @db.Text
+  price       Decimal       @db.Decimal(10, 2)
+  category    String        @db.VarChar(100)
+  status      ListingStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relationships
+  seller      User          @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Restrict)
+  orders      Order[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([category])
+  @@map("listings")
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  buyerId   String
+  sellerId  String
+  listingId String
+  amount    Decimal     @db.Decimal(10, 2)
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relationships
+  buyer     User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
+  seller    User        @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Restrict)
+  listing   Listing     @relation(fields: [listingId], references: [id], onDelete: Restrict)
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([listingId])
+  @@index([status])
+  @@map("orders")
+}
