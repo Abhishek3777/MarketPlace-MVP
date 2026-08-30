@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/env.js';
+import routes from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -25,7 +26,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Centralized Error Handlers (routes will be mounted here in subsequent phases)
+// API Routes
+app.use('/api', routes);
+
+// Centralized Error Handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 
