@@ -1,4 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const rawBase = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = rawBase === '/api' 
+  ? '/api' 
+  : rawBase.endsWith('/api') 
+    ? rawBase 
+    : `${rawBase.replace(/\/$/, '')}/api`;
+
 
 export const apiClient = async (endpoint, options = {}) => {
   const token = localStorage.getItem('marketplace_token');
