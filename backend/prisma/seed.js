@@ -1,54 +1,93 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const prisma = new PrismaClient();
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
+
+const DEFAULT_PASSWORD = 'Password123!';
+
+/**
+ * Creates a Supabase Auth user + mirrors their profile into public.users.
+ * Uses upsert logic — idempotent for re-runs.
+ */
+async function seedUser({ email, name, role }) {
+  // 1. Check if auth user already exists
+  const { data: existingList } = await supabase.auth.admin.listUsers();
+  const existingAuthUser = existingList?.users?.find((u) => u.email === email);
+
+  let supabaseUserId;
+
+  if (existingAuthUser) {
+    supabaseUserId = existingAuthUser.id;
+    console.log(`[SEED] Auth user already exists: ${email} (${supabaseUserId})`);
+  } else {
+    // 2. Create auth user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password: DEFAULT_PASSWORD,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      throw new Error(`Failed to create auth user for ${email}: ${authError.message}`);
+    }
+
+    supabaseUserId = authData.user.id;
+    console.log(`[SEED] Auth user created: ${email} (${supabaseUserId})`);
+  }
+
+  // 3. Upsert profile into public.users
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: { name, role },
+    create: {
+      id: supabaseUserId,
+      email,
+      name,
+      role,
+    },
+  });
+
+  console.log(`[SEED] Profile upserted: ${user.email} (Role: ${user.role})`);
+  return user;
+}
 
 async function main() {
   console.log('[SEED] Starting database seed...');
 
-  const defaultPassword = 'Password123!';
-  const passwordHash = await bcrypt.hash(defaultPassword, 12);
-
-  // 1. Seed Admin User
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@test.com' },
-    update: {},
-    create: {
-      email: 'admin@test.com',
-      passwordHash,
-      name: 'Platform Administrator',
-      role: 'ADMIN',
-    },
+  // 1. Seed Admin
+  const admin = await seedUser({
+    email: 'admin@test.com',
+    name: 'Platform Administrator',
+    role: 'ADMIN',
   });
-  console.log(`[SEED] Admin seeded: ${admin.email} (Role: ${admin.role})`);
 
-  // 2. Seed Seller User
-  const seller = await prisma.user.upsert({
-    where: { email: 'seller@test.com' },
-    update: {},
-    create: {
-      email: 'seller@test.com',
-      passwordHash,
-      name: 'Apex Digital Media',
-      role: 'SELLER',
-    },
+  // 2. Seed Seller
+  const seller = await seedUser({
+    email: 'seller@test.com',
+    name: 'Apex Digital Media',
+    role: 'SELLER',
   });
-  console.log(`[SEED] Seller seeded: ${seller.email} (Role: ${seller.role})`);
 
-  // 3. Seed Buyer User
-  const buyer = await prisma.user.upsert({
-    where: { email: 'buyer@test.com' },
-    update: {},
-    create: {
-      email: 'buyer@test.com',
-      passwordHash,
-      name: 'Growth Marketer',
-      role: 'BUYER',
-    },
+  // 3. Seed Buyer
+  await seedUser({
+    email: 'buyer@test.com',
+    name: 'Growth Marketer',
+    role: 'BUYER',
   });
-  console.log(`[SEED] Buyer seeded: ${buyer.email} (Role: ${buyer.role})`);
 
-  // 4. Seed Realistic Listings for Seller
+  // 4. Seed demo listings for seller (idempotent)
   const existingListings = await prisma.listing.count({
     where: { sellerId: seller.id },
   });
@@ -98,6 +137,7 @@ async function main() {
   }
 
   console.log('[SEED] Database seed completed successfully!');
+  console.log('[SEED] Test credentials — email: admin@test.com | seller@test.com | buyer@test.com | password: Password123!');
 }
 
 main()
