@@ -8,7 +8,6 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
     "prisma:studio": "prisma studio",
@@ -16,11 +15,10 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
-    "bcryptjs": "^3.0.2",
+    "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {

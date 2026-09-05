@@ -4,9 +4,9 @@ import { prisma } from './config/prisma.js';
 
 const startServer = async () => {
   try {
-    // Verify database connectivity
+    // Verify database connectivity (Supabase Postgres via Prisma)
     await prisma.$connect();
-    console.log('[DB] PostgreSQL connected successfully via Prisma');
+    console.log('[DB] Supabase Postgres connected successfully via Prisma');
 
     const server = app.listen(config.port, () => {
       console.log(`[SERVER] Marketplace API running on http://localhost:${config.port} (env: ${config.nodeEnv})`);
