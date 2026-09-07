@@ -1,9 +1,11 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
+import { useTheme } from '../../hooks/useTheme.js';
 import { UserRole } from '../../constants/roles.js';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -76,6 +78,16 @@ export const Navbar = () => {
         </div>
 
         <div className="navbar-auth">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="theme-toggle"
+            title="Day and Night theme are available to switch between"
+            aria-label={`Switch to ${theme === 'light' ? 'night' : 'day'} theme`}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+
           {isAuthenticated ? (
             <div className="user-profile-menu">
               <div className="user-info">
